@@ -118,7 +118,7 @@ function validateStruct {
         [Parameter(Mandatory)]
         [Alias("st")]
         [bool]
-        $show_text = $false,
+        $show_text,
 
         [int16]
         $n = 0
@@ -187,7 +187,7 @@ function create_Complete_OU_From_Structure {
     )
     foreach ($parentOU in $ouStructure.Keys) {
         # Create parent OU
-        $parentPath = $domainPath
+        $parentPath = $domain_path
         Write-Host "`nCreating parent OU: $parentOU" -ForegroundColor Cyan
         $parentCreated = createNewOU -Name $parentOU -Path $parentPath
     
