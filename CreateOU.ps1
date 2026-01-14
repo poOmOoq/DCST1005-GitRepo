@@ -168,7 +168,7 @@ function validateStruct_container {
     
     try {
         # Check for correct structure
-        if ($struct.GetType().Name -eq $array_flag) {
+        if ($struct.GetType().Name -cne $array_flag) {
             showError -w $format_error -h "Main structure must be an array" -p $example_format
         }
         validateStruct -a $struct -st $show_text
