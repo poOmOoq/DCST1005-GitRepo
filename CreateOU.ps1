@@ -20,23 +20,21 @@ $all_departments = @(
     "HR"
 )
 
-$structure = @(
-    @{
-        "InfraIT_TestOU" = @(
-            @{
-                "InfraIT_Users" = $all_departments
-            },
-            @{
-                "InfraIT_Computers" = 
-                @(
-                    @{ "Workstations" = $all_departments },
-                    "Servers"
-                )
-            },
-            "InfraIT_Groups"
-        )
-    }
-)
+$structure = @{
+    "InfraIT_TestOU" = @(
+        @{
+            "InfraIT_Users" = $all_departments
+        },
+        @{
+            "InfraIT_Computers" = 
+            @(
+                @{ "Workstations" = $all_departments },
+                "Servers"
+            )
+        },
+        "InfraIT_Groups"
+    )
+}
 
 function createNewOU {
     param (
@@ -182,12 +180,16 @@ function validateStruct_container {
 function create_Complete_OU_From_Structure {
     param(
         [Parameter(Mandatory)]
+        [string]
+        $domainPath,
+
+        [Parameter(Mandatory)]
         [hashtable]
         $ouStructure
     )
     foreach ($parentOU in $ouStructure.Keys) {
         # Create parent OU
-        $parentPath = $domain_path
+        $parentPath = $domainPath
         Write-Host "`nCreating parent OU: $parentOU" -ForegroundColor Cyan
         $parentCreated = createNewOU -Name $parentOU -Path $parentPath
     
@@ -199,9 +201,14 @@ function create_Complete_OU_From_Structure {
             if ($verifyParent) {
                 Write-Host "Verified parent OU exists, creating children..." -ForegroundColor Cyan
                 # Create child OUs
-                foreach ($childOU in $ouStructure[$parentOU]) {
+                $ouStructure[$parentOU] | ForEach-Object{
                     $childPath = $parentFullPath
-                    createNewOU -Name $childOU -Path $childPath
+
+                    if ($_.GetType().Name -ceq $string_flag) {
+                        createNewOU -Name $_ -Path $childPath
+                    } else {
+                        create_Complete_OU_From_Structure -ouStructure $_ -domainPath $childPath
+                    }
                 }
             }
             else {
@@ -225,4 +232,54 @@ if (-not $valid_structure) {
 Write-Host "Struture is correctly formated" -ForegroundColor Green
 Write-Host "Starting creation of Complete OU..." -ForegroundColor Blue
 
-create_Complete_OU_From_Structure -ouStructure $structure
+create_Complete_OU_From_Structure -ouStructure $structure -domainPath $domain_path
+
+function Remove-CustomADOU {
+    param (
+        [string]$Identity
+    )
+    
+    try {
+        # Check if OU exists
+        $ou = Get-ADOrganizationalUnit -Identity $Identity -ErrorAction SilentlyContinue
+        
+        if ($ou) {
+            # Disable protection
+            Set-ADOrganizationalUnit -Identity $Identity -ProtectedFromAccidentalDeletion $false
+            
+            # Remove OU
+            Remove-ADOrganizationalUnit -Identity $Identity -Confirm:$false
+            Write-Host "Successfully removed OU: $Identity" -ForegroundColor Green
+            return $true
+        } else {
+            Write-Host "OU does not exist: $Identity" -ForegroundColor Yellow
+            return $true
+        }
+    } catch {
+        Write-Host "Failed to remove OU: $Identity" -ForegroundColor Red
+        Write-Host "Error: $_" -ForegroundColor Red
+        return $false
+    }
+}
+
+function Remove-OUStructure {
+    param (
+        [hashtable]$Structure,
+        [string]$DomainPath
+    )
+    
+    # Remove child OUs first
+    foreach ($parentOU in $Structure.Keys) {
+        foreach ($childOU in $Structure[$parentOU]) {
+            $childPath = "OU=$childOU,OU=$parentOU,$DomainPath"
+            Remove-CustomADOU -Identity $childPath
+        }
+        
+        # Then remove parent OU
+        $parentPath = "OU=$parentOU,$DomainPath"
+        Remove-CustomADOU -Identity $parentPath
+    }
+}
+
+# Example usage to remove the structure:
+#Remove-OUStructure -Structure $structure -DomainPath $domain_path
