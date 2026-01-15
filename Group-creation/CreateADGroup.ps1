@@ -9,3 +9,5 @@ function creatreGroups {
             -Path $group.Path
     }
 }
+
+creatreGroups
