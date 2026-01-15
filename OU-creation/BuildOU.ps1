@@ -1,40 +1,11 @@
-$array_flag = "Object[]"
-
-$hashtable_flag = "Hashtable"
-
-$string_flag = "String"
-
 $end_program = "Exiting program due to: "
 
 $format_error = "Incorrect structure format"
 
 $example_format = "F.ex.: `$structure = @( `"Folder1`", { `"Folder2`" = @(More folders...) } )"
 
-$domain_path = "DC=InfraIT,DC=sec"
-
-$all_departments = @(
-    "Finance",
-    "Sales",
-    "IT",
-    "Consultants",
-    "HR"
-)
-
-$structure = @{
-    "InfraIT_TestOU" = @(
-        @{
-            "InfraIT_Users" = $all_departments
-        },
-        @{
-            "InfraIT_Computers" = 
-            @(
-                @{ "Workstations" = $all_departments },
-                "Servers"
-            )
-        },
-        "InfraIT_Groups"
-    )
-}
+. .\OU-creation\ConfigOU.ps1
+. .\OU-creation\Flags.ps1
 
 function createNewOU {
     param (
@@ -201,12 +172,13 @@ function create_Complete_OU_From_Structure {
             if ($verifyParent) {
                 Write-Host "Verified parent OU exists, creating children..." -ForegroundColor Cyan
                 # Create child OUs
-                $ouStructure[$parentOU] | ForEach-Object{
+                $ouStructure[$parentOU] | ForEach-Object {
                     $childPath = $parentFullPath
 
                     if ($_.GetType().Name -ceq $string_flag) {
                         createNewOU -Name $_ -Path $childPath
-                    } else {
+                    }
+                    else {
                         create_Complete_OU_From_Structure -ouStructure $_ -domainPath $childPath
                     }
                 }
@@ -220,66 +192,19 @@ function create_Complete_OU_From_Structure {
     
 }
 
-Write-Host "Validating structure..." -ForegroundColor Blue
+function BuildOU {
+    Write-Host "Validating structure..." -ForegroundColor Blue
 
-$valid_structure = validateStruct_container -struct $structure # -st $true
+    $valid_structure = validateStruct_container -struct $structure # -st $true
 
-if (-not $valid_structure) {
-    Write-Host ($end_program + $format_error) -ForegroundColor Magenta
-    exit 0
-}
-
-Write-Host "Struture is correctly formated" -ForegroundColor Green
-Write-Host "Starting creation of Complete OU..." -ForegroundColor Blue
-
-create_Complete_OU_From_Structure -ouStructure $structure -domainPath $domain_path
-
-function Remove-CustomADOU {
-    param (
-        [string]$Identity
-    )
-    
-    try {
-        # Check if OU exists
-        $ou = Get-ADOrganizationalUnit -Identity $Identity -ErrorAction SilentlyContinue
-        
-        if ($ou) {
-            # Disable protection
-            Set-ADOrganizationalUnit -Identity $Identity -ProtectedFromAccidentalDeletion $false
-            
-            # Remove OU
-            Remove-ADOrganizationalUnit -Identity $Identity -Confirm:$false
-            Write-Host "Successfully removed OU: $Identity" -ForegroundColor Green
-            return $true
-        } else {
-            Write-Host "OU does not exist: $Identity" -ForegroundColor Yellow
-            return $true
-        }
-    } catch {
-        Write-Host "Failed to remove OU: $Identity" -ForegroundColor Red
-        Write-Host "Error: $_" -ForegroundColor Red
-        return $false
+    if (-not $valid_structure) {
+        Write-Host ($end_program + $format_error) -ForegroundColor Magenta
+        exit 0
     }
+
+    Write-Host "Struture is correctly formated" -ForegroundColor Green
+    Write-Host "Starting creation of Complete OU..." -ForegroundColor Blue
+    create_Complete_OU_From_Structure -ouStructure $structure -domainPath $domain_path
 }
 
-function Remove-OUStructure {
-    param (
-        [hashtable]$Structure,
-        [string]$DomainPath
-    )
-    
-    # Remove child OUs first
-    foreach ($parentOU in $Structure.Keys) {
-        foreach ($childOU in $Structure[$parentOU]) {
-            $childPath = "OU=$childOU,OU=$parentOU,$DomainPath"
-            Remove-CustomADOU -Identity $childPath
-        }
-        
-        # Then remove parent OU
-        $parentPath = "OU=$parentOU,$DomainPath"
-        Remove-CustomADOU -Identity $parentPath
-    }
-}
-
-# Example usage to remove the structure:
-#Remove-OUStructure -Structure $structure -DomainPath $domain_path
+BuildOU
