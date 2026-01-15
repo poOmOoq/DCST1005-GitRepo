@@ -4,7 +4,7 @@ $format_error = "Incorrect structure format"
 
 $example_format = "F.ex.: `$structure = @( `"Folder1`", { `"Folder2`" = @(More folders...) } )"
 
-. .\OU-creation\ConfigOU.ps1
+. .\ConfigOU.ps1
 . .\OU-creation\Flags.ps1
 
 function createNewOU {

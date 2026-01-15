@@ -1,4 +1,4 @@
-. .\OU-creation\ConfigOU.ps1
+. .\ConfigOU.ps1
 
 function Remove-CustomADOU {
     param (
