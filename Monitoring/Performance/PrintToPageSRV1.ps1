@@ -2,12 +2,11 @@ $htmlMainTemplate = @"
 <html>
 <head>
     <title>
-        === Server Health Dashboard ===
+        Server Health Dashboard
     </title>
 </head>
 <body>
     <h2>Last update: PLACEHOLDER_TIME</h2>
-    <br>
     PLACEHOLDER_SERVER
 </body>
 </html>
@@ -53,8 +52,15 @@ foreach ($server in $results) {
 }
 
 $htmlMainContent = $htmlMainContent -replace "PLACEHOLDER_SERVER", ""
-    
-$htmlMainContent | Out-File -FilePath "C:\Users\adm_kevin\Documents\PowerShellThingy\DCST1005-GitRepo\Monitoring\Performance\performanceReport.html" -Force
+
+$htmlPath = "C:\Users\adm_kevin\Documents\PowerShellThingy\DCST1005-GitRepo\Monitoring\Performance\performanceoverview.html"
+$serverPath = "C:\inetpub\wwwroot\performanceoverview.html"
+$htmlMainContent | Out-File -FilePath $htmlPath -Force
+
+$session = New-PSSession -ComputerName srv1
+Copy-Item $htmlPath -Destination $serverPath -ToSession $session
+Remove-PSSession $session
+
 
 #Start-Sleep -Seconds 5
 #}
