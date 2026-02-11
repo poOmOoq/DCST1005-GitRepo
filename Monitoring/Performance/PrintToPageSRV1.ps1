@@ -1,0 +1,60 @@
+$htmlMainTemplate = @"
+<html>
+<head>
+    <title>
+        === Server Health Dashboard ===
+    </title>
+</head>
+<body>
+    <h2>Last update: PLACEHOLDER_TIME</h2>
+    <br>
+    PLACEHOLDER_SERVER
+</body>
+</html>
+"@
+
+$htmlServerTemplate = @"
+    <br>
+    <h3>=== PLACEHOLDER_SERVER_NAME ===</h3>
+    <table border="1">
+        <tr>
+            <th>Counter</th>
+            <th>Value</th>
+        </tr>
+        PLACEHOLDER_ROWS
+    </table>
+"@
+
+$htmlRowTemplate = @"
+        <tr>
+            <th>PLACEHOLDER_COUNTER</th>
+            <th>PLACEHOLDER_VALUE</th>
+        </tr>
+"@
+
+#while ($true) {
+. .\Monitoring\Performance\PerformanceMetrics.ps1
+
+$htmlMainContent = $htmlMainTemplate -replace "PLACEHOLDER_TIME", "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+
+foreach ($server in $results) {
+    $htmlServerContent = $htmlServerTemplate -replace "PLACEHOLDER_SERVER_NAME", $server["ComputerName"]
+        
+    foreach ($key in $server.Keys) {
+        if ($key -ceq "ComputerName") { continue }
+        $htmlRowContent = $htmlRowTemplate -replace "PLACEHOLDER_COUNTER", $key -replace "PLACEHOLDER_VALUE", $server[$key]
+
+        $htmlServerContent = $htmlServerContent.Insert($htmlServerContent.IndexOf("PLACEHOLDER_ROWS"), $htmlRowContent)
+    }
+
+    $htmlServerContent = $htmlServerContent -replace "PLACEHOLDER_ROWS", ""
+
+    $htmlMainContent = $htmlMainContent.Insert($htmlMainContent.IndexOf("PLACEHOLDER_SERVER"), $htmlServerContent)
+}
+
+$htmlMainContent = $htmlMainContent -replace "PLACEHOLDER_SERVER", ""
+    
+$htmlMainContent | Out-File -FilePath "C:\Users\adm_kevin\Documents\PowerShellThingy\DCST1005-GitRepo\Monitoring\Performance\performanceReport.html" -Force
+
+#Start-Sleep -Seconds 5
+#}

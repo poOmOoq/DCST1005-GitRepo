@@ -1,5 +1,7 @@
-$scriptblock = {
-    Install-WindowsFeature -Name Web-Server -IncludeManagementTools
+. .\Monitoring\Performance\PerformanceMetrics.ps1
+foreach ($server in $results) {
+    foreach ($key in $server.Keys) {
+        if ($key -eq "ComputerName") { continue }
+        Write-Host $key
+    }
 }
-
-Invoke-Command -ComputerName srv1 -ScriptBlock $scriptblock
