@@ -49,4 +49,5 @@ function Remove-OUStructure {
     }
 }
 
-Remove-OUStructure -Structure $structure -DomainPath $domain_path
+#Remove-OUStructure -Structure $structure -DomainPath $domain_path
+Remove-CustomADOU -Identity "OU=Consultans,OU=InfraIT_Groups,OU=InfraIT_TestOU,$($domain_path)"
