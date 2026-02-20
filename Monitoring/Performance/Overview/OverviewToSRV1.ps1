@@ -2,7 +2,7 @@ $htmlMainTemplate = @"
 <html>
 <head>
     <title>
-        Server Health Dashboard
+        Server Health Dashboard: Overview
     </title>
 </head>
 <body>
@@ -35,13 +35,14 @@ $htmlRowTemplate = @"
 . .\Monitoring\Performance\PerformanceMetrics.ps1
 
 $htmlMainContent = $htmlMainTemplate -replace "PLACEHOLDER_TIME", "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+$ignoredPropertiNames = @("Time", "Computer_Name", "PSComputerName", "RunspaceId", "PSShowComputerName")
 
 foreach ($server in $results) {
-    $htmlServerContent = $htmlServerTemplate -replace "PLACEHOLDER_SERVER_NAME", $server["ComputerName"]
+    $htmlServerContent = $htmlServerTemplate -replace "PLACEHOLDER_SERVER_NAME", $server.Computer_Name
         
-    foreach ($key in $server.Keys) {
-        if ($key -ceq "ComputerName") { continue }
-        $htmlRowContent = $htmlRowTemplate -replace "PLACEHOLDER_COUNTER", $key -replace "PLACEHOLDER_VALUE", $server[$key]
+    foreach ($prop in $server.PSObject.Properties) {
+        if ($ignoredPropertiNames.IndexOf($prop.Name) -gt -1) { continue }
+        $htmlRowContent = $htmlRowTemplate -replace "PLACEHOLDER_COUNTER", $prop.Name -replace "PLACEHOLDER_VALUE", $prop.Value
 
         $htmlServerContent = $htmlServerContent.Insert($htmlServerContent.IndexOf("PLACEHOLDER_ROWS"), $htmlRowContent)
     }
@@ -53,7 +54,7 @@ foreach ($server in $results) {
 
 $htmlMainContent = $htmlMainContent -replace "PLACEHOLDER_SERVER", ""
 
-$htmlPath = "C:\Users\adm_kevin\Documents\PowerShellThingy\DCST1005-GitRepo\Monitoring\Performance\performanceoverview.html"
+$htmlPath = "C:\Users\adm_kevin\Documents\PowerShellThingy\DCST1005-GitRepo\Monitoring\Performance\Overview\performanceoverview.html"
 $serverPath = "C:\inetpub\wwwroot\performanceoverview.html"
 $htmlMainContent | Out-File -FilePath $htmlPath -Force
 

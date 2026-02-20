@@ -1,7 +1,7 @@
-. .\Monitoring\Performance\PerformanceMetrics.ps1
-foreach ($server in $results) {
-    foreach ($key in $server.Keys) {
-        if ($key -eq "ComputerName") { continue }
-        Write-Host $key
+$t = Get-Content C:\Users\adm_kevin\Documents\PowerShellThingy\DCST1005-GitRepo\Monitoring\Performance\performance.csv
+$t | ForEach-Object {
+    $_ = $_.Replace('"', "").Split(",")
+    $_ | ForEach-Object {
+        Write-Host $_
     }
 }
