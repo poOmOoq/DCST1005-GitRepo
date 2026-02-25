@@ -1,4 +1,4 @@
-$Computers = @('cl1.infrait.sec', 'dc1.infrait.sec', 'srv1.infrait.sec', 'mgr-but-better.infrait.sec')
+$Computers = @('cl1', 'dc1', 'srv1')
 
 foreach ($Computer in $Computers) {
     Write-Host "`nTvinger update scan på $Computer.infrait.sec..." -ForegroundColor Yellow
